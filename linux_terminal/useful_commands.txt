@@ -1,0 +1,4 @@
+Useful commands:
+ffmpeg -i bad_apple.mp4 -vf scale=4:3 -preset slow -crf 18 4x3.mp4
+ffmpeg -i 4x3.mp4 -vf fps=30 a/out%d.pgm
+gnome-terminal -- aplay /home/grabg/Kenji/ba/ba.wav && ./a.ou
