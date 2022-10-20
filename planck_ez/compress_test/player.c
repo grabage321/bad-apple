@@ -12,7 +12,7 @@
 #define PGMSEEK 12 // Bytes to skip forward when reading the PGM files
 #define WIDTH 12 // Width of the video
 #define HEIGHT 4 // Height of the video
-#define AREA WIDTH * HEIGHT // Total number of pictures
+#define AREA WIDTH * HEIGHT // Total number of pixels
 
 // Takes a timespec struct and returns the total number of seconds as a double
 double ns_double(struct timespec t) {
@@ -24,12 +24,11 @@ int main(int argc, char *argv[]) {
     clock_gettime(0, &t);
     double start = ns_double(t);
 
-    unsigned char buf[BUFSIZ];
-    char filename[BUFSIZ];
+    unsigned char frame[BUFSIZ];
 
     system("clear");
 
-    int pid;
+    /*int pid;
     char *bad_apple[] = {"aplay", "./bad_apple.wav", NULL};
     if (pid = fork() == 0) {
         // Close stderr and write it to /dev/null instead
@@ -39,20 +38,26 @@ int main(int argc, char *argv[]) {
         // Use aplay to play the Bad Apple audio
         execvp("aplay", bad_apple);
         return 0;
+    }*/
+
+    // Open video file
+    FILE *f = fopen("out.xba", "r");
+
+    // Skip past header
+    char temp[] = {0, 0};
+    while (temp[0] != 0x0a || temp[1] != 0x0a) {
+        temp[1] = temp[0];
+        fread(temp, 1, 1, f);
     }
 
     for (int i = 1; i <= FRAMES; i++) {
         clock_gettime(0, &t);
         double slepe = (start + ((i + 1) / 30) + (SPF * ((i + 1) % 30))) - (ns_double(t));
         usleep((int) (slepe * USPS));
+//        usleep(USPS / 2);
 
-        // Open pgm file
-        snprintf(filename, BUFSIZ, "b/out%d.pgm", i);
-        FILE *f = fopen(filename, "r");
-
-        // Skip past pgm header information
-        fseek(f, PGMSEEK, SEEK_SET);
-        fread(buf, AREA, AREA, f);
+        // Read a frame into the buffer
+        fread(frame, 1, AREA, f);
 
         // Move cursor to start of terminal
         printf("\033[H");
@@ -60,10 +65,10 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j < AREA; j++) {
             // Print character depending on pixel value
             printf(
-                (buf[j] >= 0xCC) ? "█" :
-                (buf[j] >= 0x99) ? "▓" :
-                (buf[j] >= 0x66) ? "▒" :
-                (buf[j] >= 0x33) ? "░" :
+                (frame[j] >= 0xCC) ? "█" :
+                (frame[j] >= 0x99) ? "▓" :
+                (frame[j] >= 0x66) ? "▒" :
+                (frame[j] >= 0x33) ? "░" :
                 " "
             );
 
@@ -74,7 +79,7 @@ int main(int argc, char *argv[]) {
 
         // Newline to keep the cursor one line down
         printf("\n");
-        
+
         // Quiet mode (-q) hides this
         if (!(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'q' && !argv[1][2])) {
             // Timing information
@@ -85,10 +90,10 @@ int main(int argc, char *argv[]) {
             printf("target: %lf\n", (start + ((i + 1) / 30) + (SPF * ((i + 1) % 30))));
             printf("delta:  %lf\n", slepe * USPS);
         }
-
-        // Close the file
-        fclose(f);
     }
+
+    // Close the file
+    fclose(f);
 
     return 0;
 }

@@ -6,8 +6,13 @@
 #define FPS 30.0 // Frames per second
 #define WIDTH 12 // Width of the video
 #define HEIGHT 4 // Height of the video
+#define FRAMES 6573 // Total number of frames
+#define PGMSEEK 12 // Bytes to skip forward when reading the PGM files
 
 int main(int argc, char *argv[]) {
+    char buf[BUFSIZ];
+    char filename[BUFSIZ];
+
     // Open file
     FILE *out = fopen("out.xba", "w");
 
@@ -19,12 +24,18 @@ int main(int argc, char *argv[]) {
         fwrite(header + i, 1, 1, out);
     }
 
-    // Test bytes
-    char lmao[] = {0xff};
+    printf("Completed header write\n");
 
-    for (int j = 0; j < 256; j++) {
-        lmao[0] = (char) j;
-        fwrite(lmao, 1, 1, out);
+    for (int j = 1; j <= FRAMES; j++) {
+        snprintf(filename, BUFSIZ, "b/out%d.pgm", j);
+        FILE *f = fopen(filename, "r");
+        fseek(f, PGMSEEK, SEEK_SET);
+        fread(buf, 1, WIDTH * HEIGHT, f);
+
+
+        fwrite(buf, 1, WIDTH * HEIGHT, out);
+
+        fclose(f);
     }
 
     fclose(out);
